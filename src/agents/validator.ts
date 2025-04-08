@@ -9,70 +9,108 @@ export class ValidatorAgent extends Agent {
     try {
       const prompt = `
           You are the harshest YouTube script critic who absolutely hates boring content. Your job is to strictly evaluate scripts and maintain the highest standards.
-  
+
           Evaluate this ${duration}-form script on these critical parameters:
           1. Hook Impact (0-2.5 points)
-          - Does it grab attention in first 3 seconds?
-          - Does it create immediate curiosity?
-          - Would it stop someone from scrolling?
-          
+             - Does it grab attention in first 3 seconds?
+             - Does it create immediate curiosity?
+             - Would it stop someone from scrolling?
+
           2. Value Delivery (0-2.5 points)
-          - Does it deliver actionable insights?
-          - Is the information unique/surprising?
-          - Will viewers learn something new?
-          
+             - Does it deliver actionable insights?
+             - Is the information unique/surprising?
+             - Will viewers learn something new?
+
           3. Retention Elements (0-2.5 points)
-          - Are there effective pattern interrupts?
-          - Does it maintain curiosity throughout?
-          - Is pacing optimal for ${duration} format?
-          
+             - Are there effective pattern interrupts?
+             - Does it maintain curiosity throughout?
+             - Is pacing optimal for ${duration} format?
+
           4. Call-to-Action Power (0-2.5 points)
-          - Is the CTA compelling and natural?
-          - Does it encourage engagement?
-          - Will it drive actual actions?
-  
-          FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
+             - Is the CTA compelling and natural?
+             - Does it encourage engagement?
+             - Will it drive actual actions?
+
+          FORMAT YOUR RESPONSE EXACTLY LIKE THIS (No extra text before or after):
           SCORE_HOOK: [0-2.5]
           SCORE_VALUE: [0-2.5]
           SCORE_RETENTION: [0-2.5]
           SCORE_CTA: [0-2.5]
-          TOTAL: [sum of all scores]
+          TOTAL: [0-10]
           VERDICT: [one sentence - why this score]
-  
+
           Script to evaluate:
           ${script}
-        `;
+        `; // Added stricter instruction about no extra text
 
       const messages: Array<{
-        role: "system" | "user" | "assistant";
+        role: "user";
         content: string;
-      }> = [
-        {
-          role: "system",
-          content:
-            "You are the harshest YouTube script critic. Never be lenient.",
-        },
-        { role: "user", content: prompt },
-      ];
+      }> = [{ role: "user", content: prompt }];
 
-      const result = await this.generateCompletion(messages);
+      const result = await this.generateCompletion(messages, 0.4); // Slightly lower temp might help consistency
 
-      const hookScore = parseFloat(
-        result.match(/SCORE_HOOK: ([\d.]+)/)?.[1] || "0"
-      );
-      const valueScore = parseFloat(
-        result.match(/SCORE_VALUE: ([\d.]+)/)?.[1] || "0"
-      );
-      const retentionScore = parseFloat(
-        result.match(/SCORE_RETENTION: ([\d.]+)/)?.[1] || "0"
-      );
-      const ctaScore = parseFloat(
-        result.match(/SCORE_CTA: ([\d.]+)/)?.[1] || "0"
-      );
-      const totalScore = parseFloat(
-        result.match(/TOTAL: ([\d.]+)/)?.[1] || "0"
-      );
-      const verdict = result.match(/VERDICT: (.*)/)?.[1] || "";
+      // // --- Debugging: Log raw result carefully ---
+      // console.log("--- Validator Raw Start ---");
+      // console.log(JSON.stringify(result)); // Log with JSON.stringify to see hidden chars
+      // console.log("--- Validator Raw End ---");
+      // // Your existing log for direct viewing:
+      // console.log("result :", result);
+      // // --- End Debugging ---
+
+      // --- Improved Regex Patterns ---
+      const scoreRegex = (label: string) =>
+        new RegExp(`${label}:\\s*\\[\\s*([\\d.]+)\\s*\\]`);
+      // --- End Improved Regex Patterns ---
+
+      // --- Parsing with Improved Regex & Stricter Error Handling ---
+      const extractScore = (label: string): number => {
+        const match = result.match(scoreRegex(label));
+        if (match && match[1]) {
+          const score = parseFloat(match[1]);
+          if (!isNaN(score)) {
+            return score;
+          } else {
+            console.error(
+              `Validator Error: Failed to parse float from matched value "${match[1]}" for ${label}`
+            );
+            return 0; // Or throw error, but 0 might be safer for partial results
+          }
+        } else {
+          console.error(
+            `Validator Error: Regex failed to match label "${label}" in result.`
+          );
+          // Log the part of the string around where the label should be
+          const contextIndex = result.indexOf(label);
+          if (contextIndex !== -1) {
+            console.error(
+              `Context: "...${result.substring(
+                Math.max(0, contextIndex - 10),
+                contextIndex + 30
+              )}..."`
+            );
+          } else {
+            console.error("Label not found in result string.");
+          }
+          return 0; // Default to 0 on regex failure
+        }
+      };
+
+      const hookScore = extractScore("SCORE_HOOK");
+      const valueScore = extractScore("SCORE_VALUE");
+      const retentionScore = extractScore("SCORE_RETENTION");
+      const ctaScore = extractScore("SCORE_CTA");
+      const totalScore = extractScore("TOTAL"); // Use the same extractor
+
+      // Extract Verdict separately
+      const verdictMatch = result.match(/VERDICT:\s*(.*)/);
+      const verdict = verdictMatch?.[1]?.trim() || "Verdict not found."; // Provide fallback
+
+      console.log(
+        `Parsed Scores: Hook=${hookScore}, Value=${valueScore}, Retention=${retentionScore}, CTA=${ctaScore}, Total=${totalScore}`
+      ); // Debug parsed values
+
+      const MIN_PASS_SCORE = 8; // Define minimum score to pass
 
       return {
         scores: {
@@ -82,13 +120,23 @@ export class ValidatorAgent extends Agent {
           cta: ctaScore,
         },
         total: totalScore,
-        passed: totalScore >= 8,
+        passed: totalScore >= MIN_PASS_SCORE, // Use defined constant
         feedback: verdict,
-        fullEvaluation: result,
+        fullEvaluation: result, // Keep raw evaluation
       };
     } catch (error) {
-      console.error("Validation Error:", error);
-      throw new Error("Failed to validate script");
+      console.error("Validation Error (Outer Catch):", error);
+      // Return a default failure state
+      return {
+        scores: { hook: 0, value: 0, retention: 0, cta: 0 },
+        total: 0,
+        passed: false,
+        feedback: "Script validation failed due to an error.",
+        fullEvaluation: `Error during validation: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      };
+      // throw new Error("Failed to validate script"); // Or re-throw
     }
   }
 }
