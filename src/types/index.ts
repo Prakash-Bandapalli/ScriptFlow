@@ -1,6 +1,12 @@
 import { Date } from "mongoose";
 
-// OpenAI Types
+// Status Update Type
+export type StatusUpdate = {
+  message: string;
+  timestamp: string;
+};
+
+// OpenAI Types (Keep as is)
 export type OpenAIMessage = {
   role: "system" | "user" | "assistant";
   content: string;
@@ -8,11 +14,12 @@ export type OpenAIMessage = {
 
 // Request/Response Types
 export type RequestBody = {
-  videoTitle: string;
+  videoTitle: string; // Keep as is
   data: string;
   duration: "short" | "long";
 };
 
+// Updated SuccessResponse to include statusUpdates
 export type SuccessResponse = {
   success: true;
   script: string;
@@ -28,16 +35,20 @@ export type SuccessResponse = {
     fullEvaluation: string;
   };
   attempts: number;
+  interactions: AgentInteraction[]; // Keep interactions
+  statusUpdates?: StatusUpdate[]; // Add this
 };
 
 export type ErrorResponse = {
   success: false;
   error: string;
+  statusUpdates?: StatusUpdate[]; // Optionally add here too for consistency
 };
 
+// Updated ApiResponse (optional but cleaner handling)
 export type ApiResponse = SuccessResponse | ErrorResponse;
 
-// Agent Types
+// Agent Types (Keep as is)
 export type AgentConfig = {
   apiKey?: string;
 };
@@ -58,7 +69,7 @@ export type ValidationResult = {
 };
 
 export type ContentManagerConfig = {
-  minTotal?: number;
+  minTotal?: number; // Keep as is
   maxAttempts?: number;
 };
 
@@ -70,10 +81,12 @@ export type AgentInteraction = {
   timestamp: string;
 };
 
+// Updated GenerationResult to include statusUpdates
 export type GenerationResult = {
   script: string;
   validation: ValidationResult;
   attempts: number;
   success: boolean;
   interactions: AgentInteraction[];
+  statusUpdates?: StatusUpdate[]; // Add this
 };

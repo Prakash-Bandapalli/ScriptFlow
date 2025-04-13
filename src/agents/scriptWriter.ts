@@ -58,8 +58,8 @@ ${data ? `Core Data/Topic Information: ${data}` : ""}
 
 ${
   genrePattern // <-- Conditionally add the genre pattern instructions
-    ? `IMPORTANT GENRE PATTERN: You MUST adhere closely to the following stylistic guidelines and structural patterns for this genre:\n---\n${genrePattern}\n---`
-    : "" // If no pattern, add nothing extra
+    ? `IMPORTANT GENRE PATTERN AND REFERENCE: You MUST observe analysis and patterns provided for this genre:\n---\n${genrePattern}\n--- and only take it as reference`
+    : ""
 }
 
 Generate the script now. ${

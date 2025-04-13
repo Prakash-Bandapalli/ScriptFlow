@@ -2,7 +2,22 @@ import { Agent } from "./base";
 import { AgentConfig } from "@/types"; // Import AgentConfig if needed for constructor
 
 // Define the strict list of genres you have patterns for
-const PREDEFINED_GENRES = ["education", "history", "news", "sports"];
+const PREDEFINED_GENRES = [
+  "history",
+  "news",
+  "sports",
+  "selfimprovement",
+  "language",
+  "personalcare",
+  "vlog",
+  "moviereview",
+  "review",
+  "programming",
+  "education",
+  "fitness",
+  "cooking",
+  "finance",
+];
 const NOT_FOUND_MESSAGE = "genre is not found try something else";
 
 export class GenreClassifierAgent extends Agent {
