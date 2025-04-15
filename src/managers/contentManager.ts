@@ -1,3 +1,5 @@
+// src/managers/contentManager.ts
+
 import { SummarizerAgent } from "../agents/summarizer";
 import { ValidatorAgent } from "../agents/validator";
 import { ScriptWriterAgent } from "../agents/scriptWriter";
@@ -5,7 +7,7 @@ import {
   GenerationResult,
   ValidationResult,
   AgentInteraction,
-  StatusUpdate, // <-- Import StatusUpdate
+  StatusUpdate,
 } from "@/types/index";
 
 const MAX_ATTEMPTS = 5;
@@ -16,14 +18,14 @@ export class ContentManager {
   private scriptwriterAgent: ScriptWriterAgent;
   private summarizerAgent: SummarizerAgent;
   private interactions: AgentInteraction[];
-  private statusUpdates: StatusUpdate[]; // <-- Add state for status updates
+  private statusUpdates: StatusUpdate[];
 
   constructor() {
     this.validatorAgent = new ValidatorAgent();
     this.scriptwriterAgent = new ScriptWriterAgent();
     this.summarizerAgent = new SummarizerAgent();
     this.interactions = [];
-    this.statusUpdates = []; // <-- Initialize status updates
+    this.statusUpdates = [];
   }
 
   private logInteraction(
@@ -41,7 +43,6 @@ export class ContentManager {
     });
   }
 
-  // <-- Add method to log status updates -->
   private logStatus(message: string): void {
     const update: StatusUpdate = {
       message,
@@ -50,19 +51,28 @@ export class ContentManager {
     this.statusUpdates.push(update);
     console.log(
       `[Status] ${new Date(update.timestamp).toLocaleTimeString()}: ${message}`
-    ); // Also log to console
+    );
   }
-  // <-- End status update log method -->
 
   async generateContent(
     title: string,
     data: string,
     duration: "short" | "long",
-    genrePattern: string // <-- Accept genrePattern
+    genrePattern: string,
+    detectedGenre: string // <-- Add parameter for detected genre
   ): Promise<GenerationResult> {
     // Reset state for new generation
     this.interactions = [];
-    this.statusUpdates = []; // <-- Reset status updates
+    this.statusUpdates = [];
+
+    // --- Log the provided genre classification result FIRST ---
+    this.logInteraction(
+      "GenreClassifierAgent",
+      "Classify Genre (Result Provided)", // Indicate it was provided externally
+      `Title: ${title}`, // The input to the classifier was the title
+      `Detected Genre: ${detectedGenre}` // The output result
+    );
+    // --- End Genre Classification Log ---
 
     let attempts = 0;
     let success = false;
@@ -71,26 +81,37 @@ export class ContentManager {
     let validation: ValidationResult | undefined;
     let summarizedFeedback = "";
 
-    this.logStatus(`🚀 Starting script generation for "${title}"...`); // <-- Log initial status
+    this.logStatus(`🚀 Starting script generation for "${title}"...`);
 
     if (genrePattern) {
-      this.logStatus(`🎨 Applying specific genre style patterns.`);
+      this.logStatus(
+        `🎨 Applying specific genre style pattern for "${detectedGenre}".`
+      );
+    } else if (
+      detectedGenre &&
+      detectedGenre !== "genre is not found try something else"
+    ) {
+      this.logStatus(
+        `⚠️ Genre "${detectedGenre}" detected, but no specific pattern found. Using general style.`
+      );
     } else {
-      this.logStatus(`⚙️ Using general script writing style.`);
+      this.logStatus(
+        `⚙️ Using general script writing style (no specific genre pattern applied).`
+      );
     }
 
     do {
       attempts++;
       this.logStatus(
         `✍️ Script generation attempt ${attempts}/${MAX_ATTEMPTS}...`
-      ); // <-- Log attempt start
+      );
 
       // Summarize feedback from the *previous* validation if it exists
       if (validation && validation.feedback && !validation.passed) {
-        this.logStatus(`💡 Analyzing feedback for improvements...`); // <-- Log feedback summary start
+        this.logStatus(`💡 Analyzing feedback for improvements...`);
         try {
           summarizedFeedback = await this.summarizerAgent.summarizeFeedback(
-            validation.fullEvaluation // Pass full eval for better summary context
+            validation.fullEvaluation
           );
           this.logInteraction(
             "SummarizerAgent",
@@ -98,16 +119,16 @@ export class ContentManager {
             validation.fullEvaluation,
             summarizedFeedback
           );
-          this.logStatus(`✨ Feedback analysis complete.`); // <-- Log feedback summary end
+          this.logStatus(`✨ Feedback analysis complete.`);
         } catch (e: any) {
           this.logStatus(
             `⚠️ Error summarizing feedback: ${e.message}. Continuing without summary.`
           );
           console.error("Summarizer Error:", e);
-          summarizedFeedback = `Feedback summary failed. Focus on improving based on previous score: ${validation.total}/10. Issues likely related to: ${validation.feedback}`; // Provide fallback feedback
+          summarizedFeedback = `Feedback summary failed. Focus on improving based on previous score: ${validation.total}/10. Issues likely related to: ${validation.feedback}`;
         }
       } else {
-        summarizedFeedback = ""; // No feedback needed for first attempt or after success
+        summarizedFeedback = "";
       }
 
       // Generate script: Pass summarized feedback, last script, AND genrePattern
@@ -121,21 +142,20 @@ export class ContentManager {
           title,
           data,
           duration,
-          summarizedFeedback, // Pass summarized feedback
-          attempts > 1 ? lastScript : undefined, // Pass previous script after attempt 1
-          genrePattern // <-- Pass genrePattern consistently
+          summarizedFeedback,
+          attempts > 1 ? lastScript : undefined,
+          genrePattern // Pass genrePattern consistently
         );
 
-        // Prepare input log string carefully
         const scriptWriterInput = `Title: ${title}\nData: ${data}\nDuration: ${duration}${
-          genrePattern ? `\nGenre Pattern:\n${genrePattern}` : ""
+          genrePattern ? `\nGenre Pattern:\n${genrePattern}` : "" // Log the actual pattern used
         }${
           summarizedFeedback
             ? `\nSummarized Feedback:\n${summarizedFeedback}`
             : ""
         }${
           attempts > 1 && lastScript
-            ? `\nPrevious Script (to revise):\n[See Previous Interaction]` // Avoid logging large script again
+            ? `\nPrevious Script (to revise):\n[See Previous Interaction]`
             : ""
         }`;
 
@@ -151,11 +171,9 @@ export class ContentManager {
           `❌ Critical error during script generation (Attempt ${attempts}): ${e.message}. Stopping process.`
         );
         console.error("ScriptWriter Error:", e);
-        // Return immediately with failure state
         return {
           script: currentScript || "Script generation failed.",
           validation: validation || {
-            // Provide last known validation or a default failure
             scores: { hook: 0, value: 0, retention: 0, cta: 0 },
             total: 0,
             passed: false,
@@ -170,7 +188,7 @@ export class ContentManager {
       }
 
       // Validate the script
-      this.logStatus(`🧐 Evaluating script quality (Attempt ${attempts})...`); // <-- Log validation start
+      this.logStatus(`🧐 Evaluating script quality (Attempt ${attempts})...`);
       try {
         validation = await this.validatorAgent.validateScript(
           currentScript,
@@ -179,19 +197,23 @@ export class ContentManager {
         this.logInteraction(
           "ValidatorAgent",
           "Validate Script",
-          currentScript, // Log the script being validated
+          currentScript,
           `Score: ${validation?.total}\nVerdict: ${validation?.feedback}\nFull Eval:\n${validation?.fullEvaluation}`
         );
 
-        if (validation.passed) {
+        if (validation.passed && validation.total >= MIN_SCORE) {
+          // Added MIN_SCORE check here too for consistency
           success = true;
           this.logStatus(
             `🎉 Script approved! Score: ${validation.total}/${MIN_SCORE} (Attempt ${attempts}).`
-          ); // <-- Log success
+          );
         } else {
+          const reason = !validation.passed
+            ? "Failed validation checks."
+            : `Score ${validation.total} is below minimum ${MIN_SCORE}.`;
           this.logStatus(
-            `📉 Needs improvement. Score: ${validation.total}/${MIN_SCORE} (Attempt ${attempts}). ${validation.feedback}`
-          ); // <-- Log failure
+            `📉 Needs improvement. ${reason} (Attempt ${attempts}). ${validation.feedback}`
+          );
           if (attempts >= MAX_ATTEMPTS) {
             this.logStatus(
               `⚠️ Maximum attempts (${MAX_ATTEMPTS}) reached. Providing best available script.`
@@ -203,11 +225,9 @@ export class ContentManager {
           `❌ Critical error during script validation (Attempt ${attempts}): ${e.message}. Stopping process.`
         );
         console.error("Validator Error:", e);
-        // Return immediately with failure state
         return {
           script: currentScript || "Validation failed.",
           validation: validation || {
-            // Provide last known validation or a default failure
             scores: { hook: 0, value: 0, retention: 0, cta: 0 },
             total: 0,
             passed: false,
@@ -221,17 +241,26 @@ export class ContentManager {
         };
       }
 
-      lastScript = currentScript; // Store for potential next revision
+      lastScript = currentScript;
     } while (!success && attempts < MAX_ATTEMPTS);
 
-    // Ensure validation is defined before returning (should always be set if loop ran)
     if (!validation) {
       this.logStatus(
         `❌ Error: Process finished unexpectedly without validation results.`
       );
-      throw new Error(
-        "Content generation failed: No validation result available."
-      );
+      // Provide a default failure validation if somehow validation is still undefined
+      validation = {
+        scores: { hook: 0, value: 0, retention: 0, cta: 0 },
+        total: 0,
+        passed: false,
+        feedback: "Process finished without validation.",
+        fullEvaluation: "Process finished without validation.",
+      };
+      success = false; // Ensure success is false
+      // Don't throw an error here, return the failure state instead
+      // throw new Error(
+      //   "Content generation failed: No validation result available."
+      // );
     }
 
     this.logStatus(`🏁 Script generation process complete.`);
@@ -242,7 +271,7 @@ export class ContentManager {
       attempts,
       success,
       interactions: this.interactions,
-      statusUpdates: this.statusUpdates, // <-- Include status updates
+      statusUpdates: this.statusUpdates,
     };
   }
 }

@@ -1,48 +1,40 @@
 // /pages/api/generate.ts (or /app/api/generate/route.ts)
 
 import { NextResponse } from "next/server";
-import mongoose from "mongoose"; // Import mongoose
+import mongoose from "mongoose";
 import { ContentManager } from "@/managers/contentManager";
 import { GenreClassifierAgent } from "@/agents/genreClassifier";
 import { ScriptModel } from "@/models/Script";
-import connectDB from "@/lib/mongodb"; // Your existing DB connection utility
+import connectDB from "@/lib/mongodb";
 import { StatusUpdate } from "@/types";
 
-// --- Database Pattern Fetching Logic (Using existing Mongoose connection's client) ---
-const PATTERN_COLLECTION = "patterns"; // The name of your patterns collection
-const PATTERN_KEY_FIELD = "genre"; // Field in DB matching the genre name (e.g., "history")
-const PATTERN_VALUE_FIELD = "data"; // Field containing the pattern text
+// --- Database Pattern Fetching Logic (Keep as is) ---
+const PATTERN_COLLECTION = "patterns";
+const PATTERN_KEY_FIELD = "genre";
+const PATTERN_VALUE_FIELD = "data";
 
 async function fetchGenrePattern(genre: string): Promise<string> {
   try {
-    console.log("genre passed: ", genre);
-    // Ensure DB is connected via the shared utility
+    // console.log("genre passed: ", genre); // uncomment for debugging if needed
     await connectDB();
-
-    // --- Access the underlying native MongoDB Db object via the client ---
-    const client = mongoose.connection.getClient(); // Get the MongoClient instance
-
-    // Mongoose might not expose the default DB directly on the client,
-    // so specify it if needed, or rely on the default from the URI.
-    // If your MONGODB_URI includes the database name, client.db() is usually sufficient.
-    // If not, you might need: client.db("yourDatabaseName")
-    const db = client.db(); // Get the default Db instance from the client
-
+    const client = mongoose.connection.getClient();
+    const db = client.db();
     const collection = db.collection(PATTERN_COLLECTION);
-    // --- End Accessing Native DB ---
-
     const patternDoc = await collection.findOne({ [PATTERN_KEY_FIELD]: genre });
     console.log(
+      // uncomment for debugging if needed
       `data feched: ${patternDoc ? patternDoc[PATTERN_VALUE_FIELD] : "nothing"}`
     );
 
     if (patternDoc && typeof patternDoc[PATTERN_VALUE_FIELD] === "string") {
       console.log(
+        // uncomment for debugging if needed
         `Fetched pattern for genre: ${genre} using existing connection's client.`
       );
       return patternDoc[PATTERN_VALUE_FIELD];
     } else {
       console.log(
+        // uncomment for debugging if needed
         `No pattern found for genre: ${genre} using existing connection's client.`
       );
       return "";
@@ -52,7 +44,7 @@ async function fetchGenrePattern(genre: string): Promise<string> {
       "Error fetching genre pattern from DB using existing connection's client:",
       error
     );
-    return ""; // Return empty string on error
+    return "";
   }
 }
 // --- End Database Pattern Fetching Logic ---
@@ -69,7 +61,6 @@ export async function POST(request: Request) {
   };
 
   try {
-    // Connect DB early - needed for both pattern fetching and saving results
     logStatus("Connecting to database...");
     await connectDB();
     logStatus("Database connected.");
@@ -89,7 +80,7 @@ export async function POST(request: Request) {
     // --- Genre Classification ---
     logStatus("🤔 Analyzing title genre...");
     const genreClassifier = new GenreClassifierAgent();
-    const detectedGenre = await genreClassifier.classifyGenre(title);
+    const detectedGenre = await genreClassifier.classifyGenre(title); // Keep this result
     logStatus(`🕵️ Genre classification result: "${detectedGenre}"`);
     // --- End Genre Classification ---
 
@@ -98,7 +89,6 @@ export async function POST(request: Request) {
     const NOT_FOUND_MESSAGE = "genre is not found try something else";
     if (detectedGenre !== NOT_FOUND_MESSAGE) {
       logStatus(`📚 Fetching style pattern for genre: "${detectedGenre}"...`);
-      // Now uses the refactored function relying on the established Mongoose connection's client
       genrePatternText = await fetchGenrePattern(detectedGenre);
       if (genrePatternText) {
         logStatus(`✅ Pattern found for "${detectedGenre}".`);
@@ -118,11 +108,13 @@ export async function POST(request: Request) {
     const contentManager = new ContentManager();
 
     // --- Generate Content ---
+    // Pass detectedGenre to the manager
     const result = await contentManager.generateContent(
       title,
       data || "",
       duration || "short",
-      genrePatternText // Pass the fetched pattern
+      genrePatternText,
+      detectedGenre // <-- Pass the classification result here
     );
     // --- End Generate Content ---
 
@@ -154,6 +146,8 @@ export async function POST(request: Request) {
       } catch (dbError: any) {
         logStatus(`⚠️ Error saving script to database: ${dbError.message}`);
         console.error("Database Save Error:", dbError);
+        // Optionally add this error to the response if needed
+        // result.statusUpdates.push({ message: `DB Save Error: ${dbError.message}`, timestamp: new Date().toISOString() });
       }
     } else {
       logStatus(
@@ -163,16 +157,24 @@ export async function POST(request: Request) {
     // --- End Save Result ---
 
     logStatus("🎉 Process finished. Returning results.");
-    // Return combined result from manager + API status updates
     return NextResponse.json({
       ...result,
-      statusUpdates: allStatusUpdates,
+      statusUpdates: allStatusUpdates, // Return combined status updates
     });
   } catch (error: any) {
     console.error("API Route Unhandled error:", error);
     logStatus(`💥 Unhandled Server Error: ${error.message}`);
+    // Ensure status updates collected so far are returned even in case of error
     return NextResponse.json(
-      { error: "Internal server error", success: false, statusUpdates },
+      {
+        error: "Internal server error",
+        success: false,
+        statusUpdates, // Return updates collected up to the error point
+        interactions: [], // Return empty interactions on server error
+        script: "",
+        validation: undefined,
+        attempts: 0,
+      },
       { status: 500 }
     );
   }
