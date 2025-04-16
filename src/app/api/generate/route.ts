@@ -1,5 +1,3 @@
-// /pages/api/generate.ts (or /app/api/generate/route.ts)
-
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { ContentManager } from "@/managers/contentManager";
@@ -20,21 +18,18 @@ async function fetchGenrePattern(genre: string): Promise<string> {
     const client = mongoose.connection.getClient();
     const db = client.db();
     const collection = db.collection(PATTERN_COLLECTION);
-    const patternDoc = await collection.findOne({ [PATTERN_KEY_FIELD]: genre });
+    const patternDoc = await collection.findOne({ [PATTERN_KEY_FIELD]: genre }); // genre = education
     console.log(
-      // uncomment for debugging if needed
       `data feched: ${patternDoc ? patternDoc[PATTERN_VALUE_FIELD] : "nothing"}`
     );
 
     if (patternDoc && typeof patternDoc[PATTERN_VALUE_FIELD] === "string") {
       console.log(
-        // uncomment for debugging if needed
         `Fetched pattern for genre: ${genre} using existing connection's client.`
       );
       return patternDoc[PATTERN_VALUE_FIELD];
     } else {
       console.log(
-        // uncomment for debugging if needed
         `No pattern found for genre: ${genre} using existing connection's client.`
       );
       return "";

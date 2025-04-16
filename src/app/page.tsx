@@ -7,7 +7,6 @@ import type { ApiResponse, StatusUpdate } from "@/types";
 
 import { SimulatedProgress } from "./components/SimulatedProgress";
 
-// Add these CSS keyframes at the top of the file, right after the imports
 const fadeInUp = `
   @keyframes fadeInUp {
     from {
@@ -347,10 +346,8 @@ export default function Home() {
                           backgroundSize: "1rem",
                         }}
                       >
-                        <option value="short">
-                          Short (e.g., TikTok, Short)
-                        </option>
-                        <option value="long">Long (e.g., YouTube)</option>
+                        <option value="short">Short</option>
+                        <option value="long">Long</option>
                       </select>
                     </div>
                   </div>

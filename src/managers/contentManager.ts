@@ -1,5 +1,3 @@
-// src/managers/contentManager.ts
-
 import { SummarizerAgent } from "../agents/summarizer";
 import { ValidatorAgent } from "../agents/validator";
 import { ScriptWriterAgent } from "../agents/scriptWriter";
@@ -59,18 +57,17 @@ export class ContentManager {
     data: string,
     duration: "short" | "long",
     genrePattern: string,
-    detectedGenre: string // <-- Add parameter for detected genre
+    detectedGenre: string
   ): Promise<GenerationResult> {
-    // Reset state for new generation
     this.interactions = [];
     this.statusUpdates = [];
 
     // --- Log the provided genre classification result FIRST ---
     this.logInteraction(
       "GenreClassifierAgent",
-      "Classify Genre (Result Provided)", // Indicate it was provided externally
-      `Title: ${title}`, // The input to the classifier was the title
-      `Detected Genre: ${detectedGenre}` // The output result
+      "Classify Genre (Result Provided)",
+      `Title: ${title}`,
+      `Detected Genre: ${detectedGenre}`
     );
     // --- End Genre Classification Log ---
 
@@ -257,10 +254,6 @@ export class ContentManager {
         fullEvaluation: "Process finished without validation.",
       };
       success = false; // Ensure success is false
-      // Don't throw an error here, return the failure state instead
-      // throw new Error(
-      //   "Content generation failed: No validation result available."
-      // );
     }
 
     this.logStatus(`🏁 Script generation process complete.`);
