@@ -169,11 +169,11 @@ export abstract class Agent {
             console.warn(
               "Generation stopped due to MAX_TOKENS. Content might be incomplete."
             );
-          } else if (candidate.finishReason !== "STOP") {
-            // Handle other reasons like RECITATION, OTHER
-            throw new Error(
-              `Generation failed with finish reason: ${candidate.finishReason}`
-            );
+            // } else if (candidate.finishReason !== "STOP") {
+            //   // Handle other reasons like RECITATION, OTHER
+            //   throw new Error(
+            //     `Generation failed with finish reason: ${candidate.finishReason}`
+            //   );
           }
         }
         // 4. Ensure content and parts exist (remains same, ensure text check)

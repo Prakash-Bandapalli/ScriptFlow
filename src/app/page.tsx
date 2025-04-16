@@ -115,7 +115,10 @@ export default function Home() {
   >(null);
 
   // For demo purposes, use sample data if no result
-  const interactions = result?.interactions || SAMPLE_INTERACTIONS;
+  const interactions =
+    result?.success && result.interactions
+      ? result.interactions
+      : SAMPLE_INTERACTIONS;
   const logContainerRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
