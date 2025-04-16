@@ -4,7 +4,6 @@ import type React from "react";
 
 import { useState, useEffect } from "react";
 
-// Define the steps - Emoji is now just part of the message
 const simulationSteps = [
   "🤔 Analyzing title genre...",
   "📚 Fetching style patterns...",
