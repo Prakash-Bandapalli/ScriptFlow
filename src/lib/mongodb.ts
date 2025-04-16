@@ -12,13 +12,13 @@ declare global {
   var mongoose: GlobalMongoose | undefined;
 }
 
-if (!process.env.MONGODB_URI) {
+if (!process.env.NEXT_PUBLIC_MONGODB_URI) {
   throw new Error(
     "Please define the MONGODB_URI environment variable inside .env.local"
   );
 }
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.NEXT_PUBLIC_MONGODB_URI;
 
 /**
  * Global is used here to maintain a cached connection across hot reloads
