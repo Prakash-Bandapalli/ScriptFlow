@@ -141,8 +141,6 @@ export async function POST(request: Request) {
       } catch (dbError: any) {
         logStatus(`⚠️ Error saving script to database: ${dbError.message}`);
         console.error("Database Save Error:", dbError);
-        // Optionally add this error to the response if needed
-        // result.statusUpdates.push({ message: `DB Save Error: ${dbError.message}`, timestamp: new Date().toISOString() });
       }
     } else {
       logStatus(
@@ -164,8 +162,8 @@ export async function POST(request: Request) {
       {
         error: "Internal server error",
         success: false,
-        statusUpdates, // Return updates collected up to the error point
-        interactions: [], // Return empty interactions on server error
+        statusUpdates,
+        interactions: [],
         script: "",
         validation: undefined,
         attempts: 0,

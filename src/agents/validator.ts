@@ -48,7 +48,7 @@ export class ValidatorAgent extends Agent {
         content: string;
       }> = [{ role: "user", content: prompt }];
 
-      const result = await this.generateCompletion(messages, 0.4); // Slightly lower temp might help consistency
+      const result = await this.generateCompletion(messages, 0.4, 250); // Slightly lower temp might help consistency
 
       // // --- Debugging: Log raw result carefully ---
       // console.log("--- Validator Raw Start ---");
