@@ -1,5 +1,5 @@
 import { Agent } from "./base";
-import { AgentConfig } from "@/types"; // Import AgentConfig if needed for constructor
+import { AgentConfig } from "@/types";
 
 // Define the strict list of genres you have patterns for
 const PREDEFINED_GENRES = [
@@ -23,12 +23,12 @@ const NOT_FOUND_MESSAGE = "genre is not found try something else";
 export class GenreClassifierAgent extends Agent {
   // --- Constructor to Override Model Name ---
   constructor(config?: AgentConfig) {
-    super(config); // Call the base class constructor
+    super(config);
     // Override the model specifically for this agent
-    this.modelName = "gemini-2.0-flash"; // Or "gemini-1.5-pro-latest"
+    this.modelName = "gemini-2.0-flash";
     console.log(
       `GenreClassifierAgent initialized with model: ${this.modelName}`
-    ); // Optional log
+    );
   }
   // --- End Constructor ---
 
@@ -76,10 +76,7 @@ export class GenreClassifierAgent extends Agent {
       console.log("Processed LLM Output:", JSON.stringify(processedResult));
       // --- End Robust Post-processing ---
 
-      if (
-        PREDEFINED_GENRES.includes(processedResult) // Check processedResult
-      ) {
-        // Return the *original* predefined genre casing
+      if (PREDEFINED_GENRES.includes(processedResult)) {
         const matchedGenre = PREDEFINED_GENRES.find(
           (g) => g === processedResult
         );
