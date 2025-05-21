@@ -1,3 +1,4 @@
+// agents/scriptwriter.ts
 import { AgentConfig } from "@/types";
 import { Agent } from "./base";
 
@@ -6,17 +7,18 @@ export class ScriptWriterAgent extends Agent {
     super(config); // Call the base class constructor
     // Override the model specifically for this agent
     this.modelName = "gemini-2.0-flash"; // Or "gemini-1.5-pro-latest"
-    console.log(
-      `GenreClassifierAgent initialized with model: ${this.modelName}`
-    ); // Optional log
+    // console.log( // You can uncomment this if you want to confirm model in logs
+    //   `ScriptWriterAgent initialized with model: ${this.modelName}`
+    // );
   }
+
   async generateScript(
     title: string,
     data: string = "",
     duration: "short" | "long",
     summarizedFeedback?: string,
-    previousScript?: string, // Changed from summarizedScripts
-    genrePattern?: string // <-- Add genrePattern parameter
+    previousScript?: string,
+    genrePattern?: string
   ): Promise<string> {
     try {
       // Construct the prompt conditionally based on whether it's a revision
@@ -47,7 +49,7 @@ ${promptContext}
 Here are the general guidelines for writing a high-quality script (apply these rigorously):
 1. *Hook*: Start with a surprising fact, question, or statement to grab attention in the first 3 seconds. Make it extremely compelling.
 2. *Value*: Deliver unique, actionable, and surprising insights. Answer the viewer's implicit question: "What's in it for me?".
-3. *Retention*: Use pattern interrupts (e.g., visuals cues, tone shifts, questions, quick cuts - describe these in the script like [Visual: B-roll of X]) frequently (every ~15-30 seconds for short, ~30-60 seconds for long) to maintain curiosity. Keep the energy high.
+3. *Retention*: Use pattern interrupts (e.g., tone shifts, questions) frequently (every ~15-30 seconds for short, ~30-60 seconds for long) to maintain curiosity. Keep the energy high.
 4. *CTA*: End with a compelling and natural call-to-action that encourages specific engagement (like, comment with X, subscribe for Y). Avoid generic CTAs.
 
 Title: ${title}
@@ -57,27 +59,37 @@ Duration: ${duration} ${
 ${data ? `Core Data/Topic Information: ${data}` : ""}
 
 ${
-  genrePattern // <-- Conditionally add the genre pattern instructions
+  genrePattern
     ? `IMPORTANT GENRE PATTERN AND REFERENCE: You MUST observe analysis and patterns provided for this genre:\n---\n${genrePattern}\n--- and only take it as reference`
     : ""
 }
+
+IMPORTANT INSTRUCTIONS FOR SCRIPT CONTENT:
+- Focus *only* on the spoken words (dialogue, narration).
+- Do NOT include any visual cues, camera directions, sound effect descriptions, scene descriptions, or parenthetical emotional/tone instructions for the speaker (e.g., do not write things like "[Visual: ...]", "[Sound: ...]", "(Energetic tone)", "NARRATOR: (excitedly)").
+- If there are distinct speakers, you can denote them (e.g., "NARRATOR:", "HOST:", "INTERVIEWEE:").
+- Ensure the output is clean, containing only the text that would be spoken.
 
 Generate the script now. ${
         previousScript
           ? "Focus on the revision based on the feedback and genre pattern."
           : "Create the initial version adhering to the genre pattern."
-      } Ensure the script format is clear (e.g., use SPEAKER names or scene descriptions).
+      } Ensure the script format is clear.
     `;
 
       const messages: Array<{
-        role: "user"; // Only user role needed for Gemini with prompt structured like this
+        role: "user";
         content: string;
       }> = [{ role: "user", content: prompt }];
 
       // Potentially adjust temperature based on whether it's revision or creation
       const temperature = previousScript ? 0.6 : 0.75;
-
+      // Consider if maxTokens needs adjustment, but for script writing, the default 4096 might be okay
+      // If scripts are consistently too short or too long, or if you face timeouts here,
+      // you might experiment with this value for ScriptWriterAgent specifically.
+      // For now, we'll use the default from the base Agent class.
       const result = await this.generateCompletion(messages, temperature);
+
       return result;
     } catch (error) {
       console.error("Script Generation Error:", error);
