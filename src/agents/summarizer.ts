@@ -22,7 +22,7 @@ Feedback to summarize:
       }> = [{ role: "user", content: prompt }];
 
       // Consider reducing maxTokens if summaries are expected to be short
-      const result = await this.generateCompletion(messages); // Lower temp, fewer tokens
+      const result = await this.generateCompletion(messages, 0.5, 300); // Lower temp, fewer tokens
       return result;
     } catch (error) {
       console.error("Feedback Summarization Error:", error);
