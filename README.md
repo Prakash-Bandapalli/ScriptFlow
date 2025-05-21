@@ -9,7 +9,7 @@ Follow these steps to set up and run the project:
 Create a `.env.local` file in the root directory with the following content:
 
 ```
-MONGODB_URI=mongodb+srv://prakash:rtrprababu@scriptflow.ek14j.mongodb.net/?retryWrites=true&w=majority
+MONGODB_URI=
 OPENAI_API_KEY=your_api_key
 GOOGLE_API_KEY=your_api_key
 ```
