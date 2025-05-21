@@ -4,12 +4,9 @@ import { Agent } from "./base";
 
 export class ScriptWriterAgent extends Agent {
   constructor(config?: AgentConfig) {
-    super(config); // Call the base class constructor
+    super(config);
     // Override the model specifically for this agent
-    this.modelName = "gemini-2.0-flash"; // Or "gemini-1.5-pro-latest"
-    // console.log( // You can uncomment this if you want to confirm model in logs
-    //   `ScriptWriterAgent initialized with model: ${this.modelName}`
-    // );
+    this.modelName = "gemini-2.0-flash";
   }
 
   async generateScript(
@@ -21,7 +18,6 @@ export class ScriptWriterAgent extends Agent {
     genrePattern?: string
   ): Promise<string> {
     try {
-      // Construct the prompt conditionally based on whether it's a revision
       let promptContext = "";
       if (previousScript && summarizedFeedback) {
         promptContext = `
@@ -84,10 +80,7 @@ Generate the script now. ${
 
       // Potentially adjust temperature based on whether it's revision or creation
       const temperature = previousScript ? 0.6 : 0.75;
-      // Consider if maxTokens needs adjustment, but for script writing, the default 4096 might be okay
-      // If scripts are consistently too short or too long, or if you face timeouts here,
-      // you might experiment with this value for ScriptWriterAgent specifically.
-      // For now, we'll use the default from the base Agent class.
+
       const result = await this.generateCompletion(messages, temperature);
 
       return result;

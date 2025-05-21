@@ -41,29 +41,18 @@ export class ValidatorAgent extends Agent {
 
           Script to evaluate:
           ${script}
-        `; // Added stricter instruction about no extra text
+        `;
 
       const messages: Array<{
         role: "user";
         content: string;
       }> = [{ role: "user", content: prompt }];
 
-      const result = await this.generateCompletion(messages, 0.4, 250); // Slightly lower temp might help consistency
+      const result = await this.generateCompletion(messages, 0.4, 250);
 
-      // // --- Debugging: Log raw result carefully ---
-      // console.log("--- Validator Raw Start ---");
-      // console.log(JSON.stringify(result)); // Log with JSON.stringify to see hidden chars
-      // console.log("--- Validator Raw End ---");
-      // // Your existing log for direct viewing:
-      // console.log("result :", result);
-      // // --- End Debugging ---
-
-      // --- Improved Regex Patterns ---
       const scoreRegex = (label: string) =>
         new RegExp(`${label}:\\s*\\[\\s*([\\d.]+)\\s*\\]`);
-      // --- End Improved Regex Patterns ---
 
-      // --- Parsing with Improved Regex & Stricter Error Handling ---
       const extractScore = (label: string): number => {
         const match = result.match(scoreRegex(label));
         if (match && match[1]) {
@@ -74,13 +63,13 @@ export class ValidatorAgent extends Agent {
             console.error(
               `Validator Error: Failed to parse float from matched value "${match[1]}" for ${label}`
             );
-            return 0; // Or throw error, but 0 might be safer for partial results
+            return 0;
           }
         } else {
           console.error(
             `Validator Error: Regex failed to match label "${label}" in result.`
           );
-          // Log the part of the string around where the label should be
+
           const contextIndex = result.indexOf(label);
           if (contextIndex !== -1) {
             console.error(
@@ -92,7 +81,7 @@ export class ValidatorAgent extends Agent {
           } else {
             console.error("Label not found in result string.");
           }
-          return 0; // Default to 0 on regex failure
+          return 0;
         }
       };
 
@@ -100,17 +89,16 @@ export class ValidatorAgent extends Agent {
       const valueScore = extractScore("SCORE_VALUE");
       const retentionScore = extractScore("SCORE_RETENTION");
       const ctaScore = extractScore("SCORE_CTA");
-      const totalScore = extractScore("TOTAL"); // Use the same extractor
+      const totalScore = extractScore("TOTAL");
 
-      // Extract Verdict separately
       const verdictMatch = result.match(/VERDICT:\s*(.*)/);
       const verdict = verdictMatch?.[1]?.trim() || "Verdict not found."; // Provide fallback
 
       console.log(
         `Parsed Scores: Hook=${hookScore}, Value=${valueScore}, Retention=${retentionScore}, CTA=${ctaScore}, Total=${totalScore}`
-      ); // Debug parsed values
+      );
 
-      const MIN_PASS_SCORE = 8; // Define minimum score to pass
+      const MIN_PASS_SCORE = 8;
 
       return {
         scores: {
@@ -126,7 +114,7 @@ export class ValidatorAgent extends Agent {
       };
     } catch (error) {
       console.error("Validation Error (Outer Catch):", error);
-      // Return a default failure state
+
       return {
         scores: { hook: 0, value: 0, retention: 0, cta: 0 },
         total: 0,
@@ -136,7 +124,6 @@ export class ValidatorAgent extends Agent {
           error instanceof Error ? error.message : String(error)
         }`,
       };
-      // throw new Error("Failed to validate script"); // Or re-throw
     }
   }
 }

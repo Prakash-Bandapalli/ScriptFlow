@@ -4,7 +4,7 @@ import {
   HarmCategory,
   HarmBlockThreshold,
   GenerateContentResult,
-  SafetySetting, // Import SafetySetting type
+  SafetySetting,
 } from "@google/generative-ai";
 
 import { AgentConfig } from "@/types/index";
