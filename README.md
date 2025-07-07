@@ -1,6 +1,7 @@
-
 # 🎬 ScriptFlow: Where Creativity Meets Precision in YouTube Scriptwriting
 
+## 🎥 Demo Video
+https://github.com/user-attachments/assets/0bb5215a-dfb8-43d2-8bfc-6185f8846a03
 
 ## 🌟 Project Summary
 **ScriptFlow** is a revolutionary multi-agent AI system that automates the creation of **high-converting, genre-optimized YouTube scripts** through a data-driven, iterative workflow. By combining specialized AI agents with a rigorous quality control loop, we transform vague ideas into polished scripts tailored to captivate specific audiences.
@@ -35,49 +36,30 @@ Four collaborative agents power the magic:
 
 ---
 
-## 🔁 Workflow in Action
-```mermaid
-graph TD
-    A[User Input: Topic/Title] --> B(GenreClassifierAgent)
-    B --> C{Fetch Genre Patterns}
-    C --> D[ScriptWriterAgent: Initial Draft]
-    D --> E(ValidatorAgent: Quality Score)
-    E -->|Score <8/10| F[SummarizerAgent: Feedback Digest]
-    F --> D
-    E -->|Score ≥8/10| G[Final Script + Analytics Stored]
-```
+## 🔁 Workflow Architecture
 
+![Architecture](https://github.com/user-attachments/assets/c6bb5a49-d183-4e3b-8699-b6f3aac15636)
 
-
+---
 
 ## Getting Started
-
 Follow these steps to set up and run the project:
 
 ### 1. Environment Setup
-
 Create a `.env.local` file in the root directory with the following content:
-
 ```
 MONGODB_URI=
-OPENAI_API_KEY=your_api_key
 GOOGLE_API_KEY=your_api_key
 ```
 
 ### 2. API Key Configuration
-
 #### Google API Key
 1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Click "Get API Key" and create a new API key
 3. Copy the generated key and replace `your_api_key` in the `.env.local` file
 
-
 ### 3. Running the Application
-
 To start the development server:
-
 ```bash
 npm run dev
 ```
-
-
