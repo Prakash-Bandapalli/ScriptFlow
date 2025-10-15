@@ -48,8 +48,8 @@ Follow these steps to set up and run the project:
 ### 1. Environment Setup
 Create a `.env.local` file in the root directory with the following content:
 ```
-MONGODB_URI=
-GOOGLE_API_KEY=your_api_key
+NEXT_PUBLIC_MONGODB_URI=Your_mongo_url
+NEXT_PUBLIC_GOOGLE_API_KEY=Your_google_api_key
 ```
 
 ### 2. API Key Configuration
